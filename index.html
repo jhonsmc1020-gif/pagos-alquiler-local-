@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pagos de alquiler</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap');
+
+  :root {
+    --paper: #FAF6EC;
+    --paper-edge: #EDE4CE;
+    --ink: #23291F;
+    --ink-soft: #5B5F52;
+    --line: #D9CFB2;
+    --green: #33513A;
+    --green-soft: #E4EBDD;
+    --rust: #A8451F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Karla', sans-serif;
+    background: var(--paper-edge);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 14px;
+  }
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--paper);
+    padding: 28px 24px;
+    border-radius: 6px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 12px; color: var(--ink-soft); font-weight: 700; }
+  .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 22px; }
+
+  #login input {
+    width: 100%;
+    padding: 11px;
+    font-size: 15px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  #login button {
+    width: 100%;
+    padding: 11px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #login button:disabled { opacity: 0.6; }
+  .error { color: var(--rust); font-size: 13px; margin-top: 8px; }
+  .ok { color: var(--green); font-size: 13px; margin-top: 8px; }
+
+  #resultado { display: none; }
+  .saludo { font-size: 14px; margin-bottom: 16px; }
+  .total {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 18px;
+  }
+  .pago {
+    padding: 10px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .pago:last-child { border-bottom: none; }
+  .fila { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 13.5px; }
+  .monto { font-weight: 700; color: var(--green); }
+  .comentario { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+  .pago img { max-width: 100%; margin-top: 6px; border-radius: 4px; border: 1px solid var(--line); cursor: pointer; }
+  .salir { margin-top: 18px; background: none; border: none; color: var(--ink-soft); text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; }
+
+  .rule { border: none; border-top: 1.5px dashed var(--line); margin: 22px 0; }
+
+  #formNuevo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 11px; color: var(--ink-soft); }
+  .field input, .field textarea {
+    font-family: 'Karla', sans-serif;
+    font-size: 14px;
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .field textarea { resize: none; min-height: 40px; }
+  .voucher-picker { display: flex; align-items: center; gap: 10px; }
+  .voucher-picker label.btn {
+    font-size: 12.5px; padding: 8px 12px; border: 1px solid var(--ink);
+    border-radius: 3px; cursor: pointer; background: #fff; white-space: nowrap;
+  }
+  .voucher-picker label.btn:hover { background: var(--green-soft); }
+  .voucher-preview { font-size: 11.5px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #submitNuevo {
+    grid-column: 1 / -1;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #submitNuevo:disabled { opacity: 0.6; }
+  #msgNuevo { grid-column: 1/-1; font-size: 12px; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(20,20,15,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+  .modal-backdrop img { max-width: 100%; max-height: 90vh; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Pagos de alquiler del local</h1>
+    <div class="sub">Ingresa tu DNI para consultar los pagos o registrar uno nuevo.</div>
+
+    <div id="login">
+      <input id="dni" placeholder="DNI" maxlength="8" inputmode="numeric" />
+      <button id="btnConsultar">Consultar</button>
+      <div class="error" id="err"></div>
+    </div>
+
+    <div id="resultado">
+      <div class="saludo" id="saludo"></div>
+      <div class="total" id="total"></div>
+      <div id="lista"></div>
+
+      <hr class="rule" />
+
+      <h2>REGISTRAR NUEVO PAGO</h2>
+      <form id="formNuevo">
+        <div class="field">
+          <label for="fFecha">Fecha</label>
+          <input type="date" id="fFecha" required />
+        </div>
+        <div class="field">
+          <label for="fMonto">Monto (S/)</label>
+          <input type="number" id="fMonto" step="0.01" min="0" placeholder="0.00" required />
+        </div>
+        <div class="field full">
+          <label for="fComentario">Comentario (opcional)</label>
+          <textarea id="fComentario" placeholder="Ej: pago de setiembre"></textarea>
+        </div>
+        <div class="field full">
+          <label>Voucher de Yape (opcional)</label>
+          <div class="voucher-picker">
+            <label class="btn" for="fVoucher">Adjuntar imagen</label>
+            <input type="file" id="fVoucher" accept="image/*" style="display:none" />
+            <span class="voucher-preview" id="voucherPreviewText">Ningún archivo</span>
+          </div>
+        </div>
+        <button type="submit" id="submitNuevo">Guardar pago</button>
+        <div id="msgNuevo"></div>
+      </form>
+
+      <button class="salir" id="btnSalir">Salir</button>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+
+<script>
+  // Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjAOTIiqsQaslQQ4Js2fXjw2XZ5lIaEgEwAOaQntHOiC98ndz0-XpYek9t8OBcP_SC/exec';
+
+  let dniActual = '';
+  let pendingVoucherDataUrl = null;
+  let pendingVoucherMime = null;
+
+  const dniInput = document.getElementById('dni');
+  const btn = document.getElementById('btnConsultar');
+  const errEl = document.getElementById('err');
+  const loginEl = document.getElementById('login');
+  const resultadoEl = document.getElementById('resultado');
+  const fFecha = document.getElementById('fFecha');
+  const fVoucher = document.getElementById('fVoucher');
+  const voucherPreviewText = document.getElementById('voucherPreviewText');
+  const msgNuevo = document.getElementById('msgNuevo');
+  const submitNuevo = document.getElementById('submitNuevo');
+
+  fFecha.valueAsDate = new Date();
+
+  async function consultar() {
+    const dni = dniInput.value.trim();
+    errEl.textContent = '';
+    if (!dni) {
+      errEl.textContent = 'Escribe tu DNI.';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Consultando…';
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?dni=${encodeURIComponent(dni)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        errEl.textContent = data.mensaje || 'DNI no autorizado.';
+        return;
+      }
+      dniActual = dni;
+      mostrar(data);
+    } catch (e) {
+      errEl.textContent = 'No se pudo conectar. Intenta de nuevo.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Consultar';
+    }
+  }
+
+  function mostrar(data) {
+    loginEl.style.display = 'none';
+    resultadoEl.style.display = 'block';
+    document.getElementById('saludo').textContent = 'Hola, ' + data.nombre + '.';
+
+    const total = data.pagos.reduce((s, p) => s + Number(p.monto || 0), 0);
+    document.getElementById('total').textContent =
+      'Total: S/ ' + total.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+
+    const lista = document.getElementById('lista');
+    lista.innerHTML = '';
+    if (data.pagos.length === 0) {
+      lista.innerHTML = '<div class="comentario">Todavía no hay pagos registrados.</div>';
+      return;
+    }
+    data.pagos.forEach((p) => {
+      const div = document.createElement('div');
+      div.className = 'pago';
+      div.innerHTML = `
+        <div class="fila"><span>${p.fecha}</span><span class="monto">S/ ${Number(p.monto).toFixed(2)}</span></div>
+        ${p.comentario ? `<div class="comentario">${escapeHtml(p.comentario)}</div>` : ''}
+        ${p.voucherUrl ? `<img src="${p.voucherUrl}" alt="voucher" />` : ''}
+      `;
+      lista.appendChild(div);
+      if (p.voucherUrl) {
+        div.querySelector('img').addEventListener('click', () => openModal(p.voucherUrl));
+      }
+    });
+  }
+
+  function openModal(src) {
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = '';
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.onclick = () => { root.innerHTML = ''; };
+    const img = document.createElement('img');
+    img.src = src;
+    backdrop.appendChild(img);
+    root.appendChild(backdrop);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 720;
+          const scale = Math.min(1, maxW / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  fVoucher.addEventListener('change', async () => {
+    const file = fVoucher.files[0];
+    if (!file) {
+      pendingVoucherDataUrl = null;
+      voucherPreviewText.textContent = 'Ningún archivo';
+      return;
+    }
+    voucherPreviewText.textContent = 'Procesando…';
+    try {
+      pendingVoucherDataUrl = await compressImage(file);
+      pendingVoucherMime = 'image/jpeg';
+      voucherPreviewText.textContent = file.name;
+    } catch (err) {
+      pendingVoucherDataUrl = null;
+      voucherPreviewText.textContent = 'Error al procesar la imagen';
+    }
+  });
+
+  document.getElementById('formNuevo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgNuevo.textContent = '';
+    msgNuevo.className = '';
+
+    const fecha = fFecha.value;
+    const monto = parseFloat(document.getElementById('fMonto').value);
+    const comentario = document.getElementById('fComentario').value.trim();
+
+    if (!fecha || isNaN(monto) || monto <= 0) {
+      msgNuevo.textContent = 'Completa la fecha y un monto válido.';
+      msgNuevo.className = 'error';
+      return;
+    }
+
+    submitNuevo.disabled = true;
+    submitNuevo.textContent = 'Guardando…';
+
+    try {
+      const payload = {
+        dni: dniActual,
+        fecha,
+        monto,
+        comentario,
+        imagenBase64: pendingVoucherDataUrl || '',
+        mimeType: pendingVoucherMime || ''
+      };
+
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        msgNuevo.textContent = data.mensaje || 'No se pudo guardar.';
+        msgNuevo.className = 'error';
+        return;
+      }
+
+      msgNuevo.textContent = 'Pago guardado correctamente.';
+      msgNuevo.className = 'ok';
+      document.getElementById('fMonto').value = '';
+      document.getElementById('fComentario').value = '';
+      fVoucher.value = '';
+      pendingVoucherDataUrl = null;
+      voucherPreviewText.textContent = 'Ningún archivo';
+      fFecha.valueAsDate = new Date();
+
+      await consultarSilencioso();
+    } catch (err) {
+      msgNuevo.textContent = 'Ocurrió un error de conexión.';
+      msgNuevo.className = 'error';
+    } finally {
+      submitNuevo.disabled = false;
+      submitNuevo.textContent = 'Guardar pago';
+    }
+  });
+
+  async function consultarSilencioso() {
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?dni=${encodeURIComponent(dniActual)}`);
+      const data = await res.json();
+      if (data.ok) mostrar(data);
+    } catch (e) {}
+  }
+
+  btn.addEventListener('click', consultar);
+  dniInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') consultar(); });
+
+  document.getElementById('btnSalir').addEventListener('click', () => {
+    resultadoEl.style.display = 'none';
+    loginEl.style.display = 'block';
+    dniInput.value = '';
+    dniActual = '';
+  });
+</script>
+</body>
+</html>
