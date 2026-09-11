@@ -84,6 +84,16 @@
 
   .rule { border: none; border-top: 1.5px dashed var(--line); margin: 22px 0; }
 
+  .pendientes-aviso {
+    background: var(--green-soft);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .pendientes-aviso.aldia { color: var(--green); font-weight: 700; }
+
   #formNuevo {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -92,7 +102,7 @@
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field.full { grid-column: 1 / -1; }
   .field label { font-size: 11px; color: var(--ink-soft); }
-  .field input, .field textarea {
+  .field input, .field textarea, .field select {
     font-family: 'Karla', sans-serif;
     font-size: 14px;
     padding: 8px 9px;
@@ -150,18 +160,19 @@
       <hr class="rule" />
 
       <h2>REGISTRAR NUEVO PAGO</h2>
+      <div id="pendientesAviso" class="pendientes-aviso"></div>
       <form id="formNuevo">
-        <div class="field">
-          <label for="fFecha">Fecha</label>
-          <input type="date" id="fFecha" required />
+        <div class="field full">
+          <label for="fPeriodo">Mes que pagas</label>
+          <select id="fPeriodo" required></select>
         </div>
         <div class="field">
           <label for="fMonto">Monto (S/)</label>
           <input type="number" id="fMonto" step="0.01" min="0" placeholder="0.00" required />
         </div>
-        <div class="field full">
+        <div class="field">
           <label for="fComentario">Comentario (opcional)</label>
-          <textarea id="fComentario" placeholder="Ej: pago de setiembre"></textarea>
+          <input id="fComentario" placeholder="Opcional" />
         </div>
         <div class="field full">
           <label>Voucher de Yape (opcional)</label>
@@ -183,7 +194,7 @@
 
 <script>
   // Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnqc9EHjMEiAlisWSik0N4-gMIf2ONoxxjlS_qZbKJzg73NUyGWjGhQ-bu1IUVcmr8/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjAOTIiqsQaslQQ4Js2fXjw2XZ5lIaEgEwAOaQntHOiC98ndz0-XpYek9t8OBcP_SC/exec';
 
   let dniActual = '';
   let pendingVoucherDataUrl = null;
@@ -194,13 +205,14 @@
   const errEl = document.getElementById('err');
   const loginEl = document.getElementById('login');
   const resultadoEl = document.getElementById('resultado');
-  const fFecha = document.getElementById('fFecha');
+  const fPeriodo = document.getElementById('fPeriodo');
+  const fMonto = document.getElementById('fMonto');
   const fVoucher = document.getElementById('fVoucher');
   const voucherPreviewText = document.getElementById('voucherPreviewText');
   const msgNuevo = document.getElementById('msgNuevo');
   const submitNuevo = document.getElementById('submitNuevo');
-
-  fFecha.valueAsDate = new Date();
+  const formNuevo = document.getElementById('formNuevo');
+  const pendientesAviso = document.getElementById('pendientesAviso');
 
   async function consultar() {
     const dni = dniInput.value.trim();
@@ -241,21 +253,44 @@
     lista.innerHTML = '';
     if (data.pagos.length === 0) {
       lista.innerHTML = '<div class="comentario">Todavía no hay pagos registrados.</div>';
-      return;
+    } else {
+      data.pagos.forEach((p) => {
+        const div = document.createElement('div');
+        div.className = 'pago';
+        div.innerHTML = `
+          <div class="fila"><span>${p.fecha}</span><span class="monto">S/ ${Number(p.monto).toFixed(2)}</span></div>
+          ${p.comentario ? `<div class="comentario">${escapeHtml(p.comentario)}</div>` : ''}
+          ${p.voucherUrl ? `<img src="${p.voucherUrl}" alt="voucher" />` : ''}
+        `;
+        lista.appendChild(div);
+        if (p.voucherUrl) {
+          div.querySelector('img').addEventListener('click', () => openModal(p.voucherUrl));
+        }
+      });
     }
-    data.pagos.forEach((p) => {
-      const div = document.createElement('div');
-      div.className = 'pago';
-      div.innerHTML = `
-        <div class="fila"><span>${p.fecha}</span><span class="monto">S/ ${Number(p.monto).toFixed(2)}</span></div>
-        ${p.comentario ? `<div class="comentario">${escapeHtml(p.comentario)}</div>` : ''}
-        ${p.voucherUrl ? `<img src="${p.voucherUrl}" alt="voucher" />` : ''}
-      `;
-      lista.appendChild(div);
-      if (p.voucherUrl) {
-        div.querySelector('img').addEventListener('click', () => openModal(p.voucherUrl));
-      }
-    });
+
+    // Poblar el selector de meses pendientes
+    const pendientes = data.pendientes || [];
+    fPeriodo.innerHTML = '';
+    if (pendientes.length === 0) {
+      pendientesAviso.textContent = '✓ Estás al día. No debes ningún mes.';
+      pendientesAviso.classList.add('aldia');
+      formNuevo.style.display = 'none';
+    } else {
+      pendientesAviso.classList.remove('aldia');
+      pendientesAviso.textContent = pendientes.length === 1
+        ? 'Debes 1 mes: ' + pendientes[0].label
+        : 'Debes ' + pendientes.length + ' meses, desde ' + pendientes[0].label + '.';
+      formNuevo.style.display = 'grid';
+      pendientes.forEach((p) => {
+        const opt = document.createElement('option');
+        opt.value = p.value;
+        opt.textContent = p.label;
+        fPeriodo.appendChild(opt);
+      });
+    }
+
+    fMonto.value = data.montoSugerido || '';
   }
 
   function openModal(src) {
@@ -317,17 +352,17 @@
     }
   });
 
-  document.getElementById('formNuevo').addEventListener('submit', async (e) => {
+  formNuevo.addEventListener('submit', async (e) => {
     e.preventDefault();
     msgNuevo.textContent = '';
     msgNuevo.className = '';
 
-    const fecha = fFecha.value;
-    const monto = parseFloat(document.getElementById('fMonto').value);
+    const periodo = fPeriodo.value;
+    const monto = parseFloat(fMonto.value);
     const comentario = document.getElementById('fComentario').value.trim();
 
-    if (!fecha || isNaN(monto) || monto <= 0) {
-      msgNuevo.textContent = 'Completa la fecha y un monto válido.';
+    if (!periodo || isNaN(monto) || monto <= 0) {
+      msgNuevo.textContent = 'Selecciona el mes y un monto válido.';
       msgNuevo.className = 'error';
       return;
     }
@@ -338,7 +373,7 @@
     try {
       const payload = {
         dni: dniActual,
-        fecha,
+        periodo,
         monto,
         comentario,
         imagenBase64: pendingVoucherDataUrl || '',
@@ -360,12 +395,10 @@
 
       msgNuevo.textContent = 'Pago guardado correctamente.';
       msgNuevo.className = 'ok';
-      document.getElementById('fMonto').value = '';
       document.getElementById('fComentario').value = '';
       fVoucher.value = '';
       pendingVoucherDataUrl = null;
       voucherPreviewText.textContent = 'Ningún archivo';
-      fFecha.valueAsDate = new Date();
 
       await consultarSilencioso();
     } catch (err) {
