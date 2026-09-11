@@ -16,6 +16,7 @@
     --green: #33513A;
     --green-soft: #E4EBDD;
     --rust: #A8451F;
+    --rust-soft: #F3E1D6;
   }
   * { box-sizing: border-box; }
   body {
@@ -26,112 +27,189 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 32px 14px;
+    padding: 48px 14px;
   }
+
   .card {
     width: 100%;
-    max-width: 460px;
+    max-width: 440px;
     background: var(--paper);
-    padding: 28px 24px;
-    border-radius: 6px;
+    padding: 34px 26px 28px;
+    border-radius: 3px;
+    position: relative;
+    box-shadow: 0 1px 0 var(--paper-edge);
   }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  h2 { font-size: 14px; margin: 0 0 12px; color: var(--ink-soft); font-weight: 700; }
-  .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 22px; }
+  /* Borde perforado, como el corte de un recibo */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -9px; left: 0; right: 0;
+    height: 18px;
+    background-image: radial-gradient(circle at 9px 9px, var(--paper-edge) 8px, transparent 8.5px);
+    background-size: 18px 18px;
+    background-position: 3px 0;
+  }
+
+  h1 {
+    font-size: 19px;
+    margin: 0 0 3px;
+    font-weight: 700;
+  }
+  .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 24px; line-height: 1.5; }
 
   #login input {
     width: 100%;
-    padding: 11px;
+    padding: 12px;
     font-size: 15px;
+    font-family: 'Space Mono', monospace;
     border: 1px solid var(--line);
-    border-radius: 4px;
+    background: #fff;
+    border-radius: 3px;
     margin-bottom: 10px;
   }
-  #login button {
+  #login input:focus, .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+  #login button, #submitNuevo {
     width: 100%;
-    padding: 11px;
+    padding: 12px;
     background: var(--green);
     color: #fff;
     border: none;
-    border-radius: 4px;
-    font-size: 15px;
+    border-radius: 3px;
+    font-size: 14.5px;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
-  #login button:disabled { opacity: 0.6; }
+  #login button:hover, #submitNuevo:hover { background: #294231; }
+  #login button:disabled, #submitNuevo:disabled { opacity: 0.55; cursor: default; }
   .error { color: var(--rust); font-size: 13px; margin-top: 8px; }
   .ok { color: var(--green); font-size: 13px; margin-top: 8px; }
 
   #resultado { display: none; }
-  .saludo { font-size: 14px; margin-bottom: 16px; }
-  .total {
+
+  .saludo { font-size: 14px; color: var(--ink-soft); margin-bottom: 18px; }
+  .saludo strong { color: var(--ink); }
+
+  /* Sello de tinta con el estado de la cuenta */
+  .estado {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 26px;
+  }
+  .sello {
+    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     font-family: 'Space Mono', monospace;
-    font-size: 22px;
     font-weight: 700;
-    color: var(--green);
-    margin-bottom: 18px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    line-height: 1.35;
+    transform: rotate(-7deg);
+    mix-blend-mode: multiply;
+    opacity: 0.9;
+    padding: 4px;
   }
-  .pago {
-    padding: 10px 0;
-    border-bottom: 1px dotted var(--line);
-  }
-  .pago:last-child { border-bottom: none; }
-  .fila { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 13.5px; }
-  .monto { font-weight: 700; color: var(--green); }
-  .comentario { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
-  .pago img { max-width: 100%; margin-top: 6px; border-radius: 4px; border: 1px solid var(--line); cursor: pointer; }
-  .salir { margin-top: 18px; background: none; border: none; color: var(--ink-soft); text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; }
+  .sello.ok { color: var(--green); }
+  .sello.debe { color: var(--rust); }
+  .estado-texto { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+  .estado-texto strong { color: var(--ink); font-weight: 700; }
 
-  .rule { border: none; border-top: 1.5px dashed var(--line); margin: 22px 0; }
-
-  .pendientes-aviso {
-    background: var(--green-soft);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 10px 12px;
+  h2.titulo-seccion {
     font-size: 13px;
-    margin-bottom: 16px;
+    margin: 0 0 14px;
+    color: var(--ink-soft);
+    font-weight: 700;
   }
-  .pendientes-aviso.aldia { color: var(--green); font-weight: 700; }
 
   #formNuevo {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+    margin-bottom: 8px;
   }
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field.full { grid-column: 1 / -1; }
   .field label { font-size: 11px; color: var(--ink-soft); }
-  .field input, .field textarea, .field select {
+  .field input, .field select {
     font-family: 'Karla', sans-serif;
     font-size: 14px;
-    padding: 8px 9px;
+    padding: 9px 9px;
     border: 1px solid var(--line);
     background: #fff;
     border-radius: 3px;
     color: var(--ink);
   }
-  .field textarea { resize: none; min-height: 40px; }
   .voucher-picker { display: flex; align-items: center; gap: 10px; }
   .voucher-picker label.btn {
     font-size: 12.5px; padding: 8px 12px; border: 1px solid var(--ink);
     border-radius: 3px; cursor: pointer; background: #fff; white-space: nowrap;
+    transition: background 0.15s ease;
   }
   .voucher-picker label.btn:hover { background: var(--green-soft); }
   .voucher-preview { font-size: 11.5px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #submitNuevo {
-    grid-column: 1 / -1;
-    background: var(--green);
-    color: #fff;
-    border: none;
-    padding: 11px;
-    font-size: 14px;
-    font-weight: 700;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  #submitNuevo:disabled { opacity: 0.6; }
+  #submitNuevo { grid-column: 1 / -1; }
   #msgNuevo { grid-column: 1/-1; font-size: 12px; }
+
+  .aldia-msg {
+    background: var(--green-soft);
+    border: 1px dashed var(--line);
+    border-radius: 3px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .rule { border: none; border-top: 1.5px dashed var(--line); margin: 26px 0 16px; }
+
+  /* Historial colapsable */
+  details.historial summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  details.historial summary::-webkit-details-marker { display: none; }
+  details.historial summary::after {
+    content: '+';
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    color: var(--ink-soft);
+    transition: transform 0.15s ease;
+  }
+  details.historial[open] summary::after { transform: rotate(45deg); }
+
+  .total {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    margin: 16px 0 14px;
+  }
+  .pago { padding: 10px 0; border-bottom: 1px dotted var(--line); }
+  .pago:last-child { border-bottom: none; }
+  .fila { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 13.5px; }
+  .monto { font-weight: 700; color: var(--green); }
+  .comentario { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+  .pago img { max-width: 100%; margin-top: 6px; border-radius: 4px; border: 1px solid var(--line); cursor: pointer; }
+
+  .salir { margin-top: 22px; background: none; border: none; color: var(--ink-soft); text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; }
 
   .modal-backdrop {
     position: fixed; inset: 0; background: rgba(20,20,15,0.85);
@@ -139,12 +217,16 @@
     z-index: 50; padding: 20px;
   }
   .modal-backdrop img { max-width: 100%; max-height: 90vh; border-radius: 4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
 </style>
 </head>
 <body>
   <div class="card">
     <h1>Pagos de alquiler del local</h1>
-    <div class="sub">Ingresa tu DNI para consultar los pagos o registrar uno nuevo.</div>
+    <div class="sub">Ingresa tu DNI para consultar tu cuenta o registrar un pago.</div>
 
     <div id="login">
       <input id="dni" placeholder="DNI" maxlength="8" inputmode="numeric" />
@@ -154,13 +236,14 @@
 
     <div id="resultado">
       <div class="saludo" id="saludo"></div>
-      <div class="total" id="total"></div>
-      <div id="lista"></div>
 
-      <hr class="rule" />
+      <div class="estado">
+        <div class="sello" id="sello"></div>
+        <div class="estado-texto" id="estadoTexto"></div>
+      </div>
 
-      <h2>REGISTRAR NUEVO PAGO</h2>
-      <div id="pendientesAviso" class="pendientes-aviso"></div>
+      <h2 class="titulo-seccion">Registrar pago</h2>
+      <div id="aldiaMsg" class="aldia-msg" style="display:none">Ya no debes ningún mes. Cuando venza el siguiente, aparecerá aquí.</div>
       <form id="formNuevo">
         <div class="field full">
           <label for="fPeriodo">Mes que pagas</label>
@@ -185,6 +268,14 @@
         <button type="submit" id="submitNuevo">Guardar pago</button>
         <div id="msgNuevo"></div>
       </form>
+
+      <hr class="rule" />
+
+      <details class="historial" id="historialDetails">
+        <summary>Ver historial de pagos</summary>
+        <div class="total" id="total"></div>
+        <div id="lista"></div>
+      </details>
 
       <button class="salir" id="btnSalir">Salir</button>
     </div>
@@ -212,7 +303,9 @@
   const msgNuevo = document.getElementById('msgNuevo');
   const submitNuevo = document.getElementById('submitNuevo');
   const formNuevo = document.getElementById('formNuevo');
-  const pendientesAviso = document.getElementById('pendientesAviso');
+  const aldiaMsg = document.getElementById('aldiaMsg');
+  const sello = document.getElementById('sello');
+  const estadoTexto = document.getElementById('estadoTexto');
 
   async function consultar() {
     const dni = dniInput.value.trim();
@@ -243,11 +336,43 @@
   function mostrar(data) {
     loginEl.style.display = 'none';
     resultadoEl.style.display = 'block';
-    document.getElementById('saludo').textContent = 'Hola, ' + data.nombre + '.';
+    document.getElementById('saludo').innerHTML = 'Hola, <strong>' + data.nombre + '</strong>.';
 
+    // Sello de estado
+    const pendientes = data.pendientes || [];
+    if (pendientes.length === 0) {
+      sello.className = 'sello ok';
+      sello.textContent = 'AL DÍA';
+      estadoTexto.innerHTML = 'Tu cuenta está <strong>al día</strong>. No debes ningún mes.';
+    } else {
+      sello.className = 'sello debe';
+      sello.textContent = pendientes.length + (pendientes.length === 1 ? ' MES' : ' MESES');
+      estadoTexto.innerHTML = pendientes.length === 1
+        ? 'Debes <strong>' + pendientes[0].label + '</strong>.'
+        : 'Debes desde <strong>' + pendientes[0].label + '</strong> hasta <strong>' + pendientes[pendientes.length - 1].label + '</strong>.';
+    }
+
+    // Formulario de registro
+    fPeriodo.innerHTML = '';
+    if (pendientes.length === 0) {
+      formNuevo.style.display = 'none';
+      aldiaMsg.style.display = 'block';
+    } else {
+      formNuevo.style.display = 'grid';
+      aldiaMsg.style.display = 'none';
+      pendientes.forEach((p) => {
+        const opt = document.createElement('option');
+        opt.value = p.value;
+        opt.textContent = p.label;
+        fPeriodo.appendChild(opt);
+      });
+    }
+    fMonto.value = data.montoSugerido || '';
+
+    // Historial
     const total = data.pagos.reduce((s, p) => s + Number(p.monto || 0), 0);
     document.getElementById('total').textContent =
-      'Total: S/ ' + total.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+      'Total pagado: S/ ' + total.toLocaleString('es-PE', { minimumFractionDigits: 2 });
 
     const lista = document.getElementById('lista');
     lista.innerHTML = '';
@@ -268,29 +393,6 @@
         }
       });
     }
-
-    // Poblar el selector de meses pendientes
-    const pendientes = data.pendientes || [];
-    fPeriodo.innerHTML = '';
-    if (pendientes.length === 0) {
-      pendientesAviso.textContent = '✓ Estás al día. No debes ningún mes.';
-      pendientesAviso.classList.add('aldia');
-      formNuevo.style.display = 'none';
-    } else {
-      pendientesAviso.classList.remove('aldia');
-      pendientesAviso.textContent = pendientes.length === 1
-        ? 'Debes 1 mes: ' + pendientes[0].label
-        : 'Debes ' + pendientes.length + ' meses, desde ' + pendientes[0].label + '.';
-      formNuevo.style.display = 'grid';
-      pendientes.forEach((p) => {
-        const opt = document.createElement('option');
-        opt.value = p.value;
-        opt.textContent = p.label;
-        fPeriodo.appendChild(opt);
-      });
-    }
-
-    fMonto.value = data.montoSugerido || '';
   }
 
   function openModal(src) {
