@@ -378,6 +378,19 @@
   const sello = document.getElementById('sello');
   const estadoTexto = document.getElementById('estadoTexto');
 
+  // --- Sesión guardada en el navegador (sobrevive a F5) ---
+  const STORAGE_KEY = 'alquiler_sesion';
+
+  function guardarSesion(dni, data) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ dni, data })); } catch (e) {}
+  }
+  function leerSesion() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function borrarSesion() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
   async function consultar() {
     const dni = dniInput.value.trim();
     errEl.textContent = '';
@@ -395,6 +408,7 @@
         return;
       }
       dniActual = dni;
+      guardarSesion(dni, data);
       mostrar(data);
     } catch (e) {
       errEl.textContent = 'No se pudo conectar. Intenta de nuevo.';
@@ -407,7 +421,7 @@
   function mostrar(data) {
     loginEl.style.display = 'none';
     resultadoEl.style.display = 'block';
-    document.getElementById('saludo').innerHTML = 'Hola, <strong>' + data.nombre + '</strong>.';
+    document.getElementById('saludo').innerHTML = 'Hola, <strong>' + escapeHtml(data.nombre || '') + '</strong>.';
 
     // Sello de estado
     const pendientes = data.pendientes || [];
@@ -584,22 +598,48 @@
   });
 
   async function consultarSilencioso() {
+    if (!dniActual) return;
     try {
       const res = await fetch(`${APPS_SCRIPT_URL}?dni=${encodeURIComponent(dniActual)}`);
       const data = await res.json();
-      if (data.ok) mostrar(data);
-    } catch (e) {}
+      if (data.ok) {
+        guardarSesion(dniActual, data);
+        mostrar(data);
+      } else {
+        // El DNI ya no está autorizado: volver al login
+        cerrarSesion();
+        errEl.textContent = data.mensaje || 'DNI no autorizado.';
+      }
+    } catch (e) {
+      // Sin conexión: se queda mostrando los datos guardados
+    }
   }
 
-  btn.addEventListener('click', consultar);
-  dniInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') consultar(); });
-
-  document.getElementById('btnSalir').addEventListener('click', () => {
+  function cerrarSesion() {
+    borrarSesion();
     resultadoEl.style.display = 'none';
     loginEl.style.display = 'block';
     dniInput.value = '';
     dniActual = '';
-  });
+    msgNuevo.textContent = '';
+    document.getElementById('historialDetails').open = false;
+  }
+
+  // Al cargar (o al dar F5): si hay sesión guardada, mostrarla al instante
+  // y actualizar los datos en segundo plano.
+  (function restaurarSesion() {
+    const s = leerSesion();
+    if (!s || !s.dni) return;
+    dniActual = s.dni;
+    dniInput.value = s.dni;
+    if (s.data && s.data.ok) mostrar(s.data);
+    consultarSilencioso();
+  })();
+
+  btn.addEventListener('click', consultar);
+  dniInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') consultar(); });
+
+  document.getElementById('btnSalir').addEventListener('click', cerrarSesion);
 </script>
 </body>
 </html>
